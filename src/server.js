@@ -12,10 +12,17 @@ app.get("/health", (_, res) => {
 });
 app.post("/api/logs/batch", async (req, res) => {
     const { events } = req.body;
-    if (!Array.isArray(events)) {
+    if (!Array.isArray(events) || events.length === 0) {
         return res.status(400).json({ error: "Invalid payload" });
     }
+    const attemptId = events[0].attemptId;
     try {
+        // Ensure attempt exists (create if first time)
+        await prisma.attempt.upsert({
+            where: { id: attemptId },
+            update: {},
+            create: { id: attemptId },
+        });
         await prisma.auditLog.createMany({
             data: events.map((event) => ({
                 attemptId: event.attemptId,
@@ -29,6 +36,58 @@ app.post("/api/logs/batch", async (req, res) => {
     }
     catch (error) {
         console.error("Failed to store logs:", error);
+        return res.status(500).json({ error: "Internal server error" });
+    }
+});
+app.post("/api/attempt/submit", async (req, res) => {
+    const { attemptId } = req.body;
+    if (!attemptId) {
+        return res.status(400).json({ error: "Missing attemptId" });
+    }
+    try {
+        const attempt = await prisma.attempt.update({
+            where: { id: attemptId },
+            data: { submittedAt: new Date() },
+        });
+        return res.json({
+            message: "Assessment submitted successfully.",
+            attemptId: attempt.id,
+            submittedAt: attempt.submittedAt,
+        });
+    }
+    catch (error) {
+        return res.status(404).json({
+            error: "Attempt not found",
+        });
+    }
+});
+app.get("/api/employer/audit/:attemptId", async (req, res) => {
+    const { attemptId } = req.params;
+    try {
+        const attempt = await prisma.attempt.findUnique({
+            where: { id: attemptId },
+            include: {
+                logs: {
+                    orderBy: { timestampClient: "asc" },
+                },
+            },
+        });
+        if (!attempt) {
+            return res.status(404).json({ error: "Attempt not found" });
+        }
+        return res.json({
+            attemptId: attempt.id,
+            submittedAt: attempt.submittedAt,
+            totalEvents: attempt.logs.length,
+            events: attempt.logs.map((log) => ({
+                eventType: log.eventType,
+                timestampClient: log.timestampClient,
+                serverTimestamp: log.createdAt,
+                metadata: log.metadata,
+            })),
+        });
+    }
+    catch (error) {
         return res.status(500).json({ error: "Internal server error" });
     }
 });
