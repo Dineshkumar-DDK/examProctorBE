@@ -11,7 +11,6 @@ app.get("/health", (_, res) => {
     res.status(200).json({ status: "ok" });
 });
 
-console.log("DATABASE_URL:", process.env.DATABASE_URL);
 app.post("/api/logs/batch", async (req, res) => {
     const { events } = req.body;
     if (!Array.isArray(events) || events.length === 0) {
@@ -95,6 +94,8 @@ app.get("/api/employer/audit/:attemptId", async (req, res) => {
 });
 const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => {
+
+    console.log("DATABASE_URL:", process.env.DATABASE_URL);
     console.log(`Server running on port ${PORT}`);
 });
 //# sourceMappingURL=index.js.map
