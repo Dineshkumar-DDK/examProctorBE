@@ -1,13 +1,13 @@
 {
   "name": "simple-back-end",
   "version": "1.0.0",
-  "main": "dist/server.js"
+  "main": "dist/index.js"
 ,
   "type": "module",
   "scripts": {
-    "dev": "node --loader ts-node/esm src/server.ts",
+    "dev": "node --loader ts-node/esm src/index.ts",
     "build": "tsc",
-    "start": "node dist/server.js"
+    "start": "node dist/index.js"
   },
   "keywords": [],
   "author": "",
