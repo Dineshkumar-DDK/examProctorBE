@@ -10,6 +10,8 @@ app.use(express.json());
 app.get("/health", (_, res) => {
     res.status(200).json({ status: "ok" });
 });
+
+console.log("DATABASE_URL:", process.env.DATABASE_URL);
 app.post("/api/logs/batch", async (req, res) => {
     const { events } = req.body;
     if (!Array.isArray(events) || events.length === 0) {
